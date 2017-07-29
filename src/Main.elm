@@ -1,55 +1,82 @@
-module Main exposing (..)
+import Html exposing (..)
+import Html.Attributes exposing (..)
+-- import Html.Events exposing (..)
+import Http
+import Json.Decode as Decode
 
-import Html exposing (Html, text, div, img)
-import Html.Attributes exposing (src)
+main =
+  Html.program
+    { init = init
+    , view = view
+    , update = update
+    , subscriptions = (always Sub.none)
+    }
 
+-- MODEL
+type alias Article =
+  { title: String
+  , url: String
+  }
 
----- MODEL ----
+type alias Model = List Article
 
-
-type alias Model =
-    {}
-
-
-init : ( Model, Cmd Msg )
+init : (Model, Cmd Msg)
 init =
-    ( {}, Cmd.none )
+  ( []
+  , getHackerNews
+  )
 
-
-
----- UPDATE ----
-
+-- UPDATE
 
 type Msg
-    = NoOp
+  = NewArticles (Result Http.Error (List Article))
 
-
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
-    ( model, Cmd.none )
+  case msg of
+    NewArticles (Ok articles) ->
+      (articles, Cmd.none)
 
+    NewArticles (Err _) ->
+      (model, Cmd.none)
 
-
----- VIEW ----
-
+-- VIEW
 
 view : Model -> Html Msg
 view model =
-    div []
-        [ img [ src "/logo.svg" ] []
-        , div [] [ text "Your Elm App is working!" ]
-        ]
+  div []
+    (List.map renderArticle model)
 
+-- SUBSCRIPTIONS
 
+subscriptions : Model -> Sub Msg
+subscriptions model =
+  Sub.none
 
----- PROGRAM ----
+-- HTTP
 
+-- renderArticle : Article -> List Html Msg
+renderArticle article =
+  div []
+    [ a [ href article.url ] [ text article.title ]
+    , br [] []
+    ]
 
-main : Program Never Model Msg
-main =
-    Html.program
-        { view = view
-        , init = init
-        , update = update
-        , subscriptions = always Sub.none
-        }
+getHackerNews : Cmd Msg
+getHackerNews =
+  let
+    url =
+      "http://node-hnapi.herokuapp.com/news"
+  in
+    Http.send NewArticles (Http.get url decodeHnUrl)
+
+article : Decode.Decoder Article
+article =
+  Decode.map2
+    Article
+    (Decode.field "title" Decode.string)
+    (Decode.field "url" Decode.string)
+
+decodeHnUrl : Decode.Decoder (List Article)
+decodeHnUrl =
+  Decode.list article
