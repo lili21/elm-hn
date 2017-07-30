@@ -66,7 +66,7 @@ getHackerNews : Cmd Msg
 getHackerNews =
   let
     url =
-      "http://node-hnapi.herokuapp.com/news"
+      "https://node-hnapi.herokuapp.com/news"
   in
     Http.send NewArticles (Http.get url decodeHnUrl)
 
